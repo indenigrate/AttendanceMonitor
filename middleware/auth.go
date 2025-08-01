@@ -13,7 +13,7 @@ import (
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
-		if !strings.HasPrefix(authHeader, "Bearer ") {
+		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing or malformed token"})
 			c.Abort()
 			return
@@ -25,16 +25,28 @@ func AuthMiddleware() gin.HandlerFunc {
 		})
 
 		if err != nil {
-			log.Fatal("Error authenticating [auth.go]", err)
+			log.Println("JWT parse error:", err)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Failed to parse token"})
+			c.Abort()
+			return
 		}
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			c.Set("user_id", claims["user_id"])
+			userIDFloat, ok := claims["user_id"].(float64)
+			if !ok {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID format in token"})
+				c.Abort()
+				return
+			}
+
+			userID := int(userIDFloat)
+			c.Set("user_id", userID) // ✅ store as int, see note below
 		} else {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			c.Abort()
 			return
 		}
+
 		c.Next()
 	}
 }

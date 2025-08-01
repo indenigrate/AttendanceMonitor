@@ -3,17 +3,17 @@ package main
 import (
 	"AttendanceMonitor/config"
 	"AttendanceMonitor/models"
-	"AttendanceMonitor/utils"
-	"fmt"
-	"log"
+	"AttendanceMonitor/routes"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	config.InitDB()
+	models.InitAllTables()
 
-	if err := models.InitAllTables(); err != nil {
-		log.Fatal("DB schema init failed:", err)
-	}
-	key, err := utils.GenerateJWT("onesine")
-	fmt.Println(key, err)
+	r := gin.Default()
+	routes.SetupRoutes(r)
+
+	r.Run(":8080")
 }

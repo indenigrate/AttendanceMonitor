@@ -40,3 +40,39 @@ func MarkAbsent(userSubjectID int) error {
 	`, userSubjectID)
 	return err
 }
+
+type AttendanceStats struct {
+	SubjectCode     string `json:"subject_code"`
+	AttendedClasses int    `json:"attended_classes"`
+	TotalClasses    int    `json:"total_classes"`
+	Percentage      int    `json:"percentage"`
+}
+
+func GetAttendanceStats(userID int) ([]AttendanceStats, error) {
+	rows, err := config.DB.Query(context.Background(), `
+		SELECT s.subject_code, us.attended_classes, us.total_classes
+		FROM user_subjects us
+		JOIN subjects s ON us.subject_id = s.id
+		WHERE us.user_id = $1
+	`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var stats []AttendanceStats
+	for rows.Next() {
+		var a AttendanceStats
+		err := rows.Scan(&a.SubjectCode, &a.AttendedClasses, &a.TotalClasses)
+		if err != nil {
+			continue
+		}
+		if a.TotalClasses > 0 {
+			a.Percentage = int(float64(a.AttendedClasses) / float64(a.TotalClasses) * 100)
+		} else {
+			a.Percentage = 0
+		}
+		stats = append(stats, a)
+	}
+	return stats, nil
+}
