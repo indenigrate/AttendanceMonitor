@@ -3,6 +3,7 @@ package models
 import (
 	"AttendanceMonitor/config"
 	"context"
+	"strings"
 )
 
 type TimetableEntry struct {
@@ -30,6 +31,8 @@ func GetWeeklyTimetable(userID int) ([]TimetableEntry, error) {
 		if err != nil {
 			continue
 		}
+		// Trim whitespace from slot
+		entry.Slot = strings.TrimSpace(entry.Slot)
 		entries = append(entries, entry)
 	}
 	return entries, nil

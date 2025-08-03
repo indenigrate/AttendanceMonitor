@@ -18,6 +18,12 @@ func SetupRoutes(router *gin.Engine) {
 				"status": "ok",
 			})
 		})
+		public.GET("/cors-test", func(c *gin.Context) {
+			c.JSON(200, gin.H{
+				"message": "CORS test successful",
+				"headers": c.Request.Header,
+			})
+		})
 
 	}
 
